@@ -7,11 +7,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MediatR" Version="14.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="9.0.20" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\JobApplication.Domain\JobApplication.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Fetures\Application\Query\" />
+    <Folder Include="Fetures\Jobs\Commands\CreateJob\Queries\" />
   </ItemGroup>
 
 </Project>

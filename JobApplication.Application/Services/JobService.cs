@@ -18,8 +18,19 @@ namespace JobApplication.Application.Services
             {
                 _jobRepository = jobRepository;
             }
+        public IEnumerable<Job> GetAll()
+        {
+            var jobs = _jobRepository.Get().ToList();
+            return jobs;
+        }
 
-            public async Task<int> CreateAsync(CreateJobDto createJobDto)
+        public  Job? GetByIdAsync(int id)
+        {
+            var job = _jobRepository.Get().FirstOrDefault(j => j.Id == id);
+            return job;
+        }
+
+        public async Task<int> CreateAsync(CreateJobDto createJobDto)
             {
                 var job = new Job()
                 {
