@@ -36,7 +36,8 @@ namespace JobApplication.Application.Services
                 {
                     Title = createJobDto.Title,
                     Description = createJobDto.Description,
-                    IsActive = true
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
                 };
                 await _jobRepository.InsertAsync(job);
                 await _jobRepository.SaveChangesAsync();

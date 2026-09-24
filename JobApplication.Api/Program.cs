@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Hangfire;
+using JobApplication.Infrastructure.Services;
 
 namespace JobApplication.Api
 {
@@ -18,6 +20,13 @@ namespace JobApplication.Api
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            builder.Services.AddHangfire(config =>
+            {
+                config.UseSqlServerStorage(
+                    builder.Configuration.GetConnectionString("DefaultConnection"));
+            });
+
+            builder.Services.AddHangfireServer();
             builder.Services.AddEndpointsApiExplorer();
 
             builder.Services.AddMediatR(cfg =>
@@ -104,12 +113,25 @@ namespace JobApplication.Api
             builder.Services.AddScoped<IApplicationRepository, ApplicationRepository>();
             builder.Services.AddScoped<ApplicationService>();
             builder.Services.AddScoped<IIdentityService, IdentityService>();
+            builder.Services.AddScoped<JobMaintenanceService>();
+            builder.Services.AddScoped<INotificationService, EmailNotificationService>();
 
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
 
             var app = builder.Build();
+            
+            using (var scope = app.Services.CreateScope())
+            {
+                var recurringJobManager =
+                    scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
 
+                recurringJobManager.AddOrUpdate<JobMaintenanceService>(
+                    "auto-close-jobs",
+                    service => service.AutoCloseJobs(),
+                    Cron.Daily);
+            }
+            app.UseHangfireDashboard("/hangfire");
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {

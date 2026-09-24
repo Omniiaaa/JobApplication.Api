@@ -1,4 +1,5 @@
-﻿using JobApplication.Application.Interfaces;
+﻿using Hangfire;
+using JobApplication.Application.Interfaces;
 using JobApplication.Domain.Entities;
 using JobApplication.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
@@ -14,15 +15,18 @@ namespace JobApplication.Application.Services
     {
         private readonly IApplicationRepository _applicationRepository;
         private readonly IJobRepository _jobRepository;
+        private readonly IBackgroundJobClient _backgroundJobClient;
 
         public ApplicationService(
             IApplicationRepository applicationRepository,
-            IJobRepository jobRepository)
+            IJobRepository jobRepository,
+            IBackgroundJobClient backgroundJobClient)
         {
             _applicationRepository = applicationRepository;
             _jobRepository = jobRepository;
+            _backgroundJobClient = backgroundJobClient;
         }
-        [Authorize(Roles = "Admin")]
+       
         public async Task<bool> UpdateStatus( int id,JobApplicationStatus newStatus)
         {
             var application = await _applicationRepository.GetByIdAsync(id);
@@ -60,7 +64,11 @@ namespace JobApplication.Application.Services
             application.StatusUpdatedAt = DateTime.UtcNow;
 
             _applicationRepository.Update(application);
+
             await _applicationRepository.SaveChangesAsync();
+
+            _backgroundJobClient.Enqueue<INotificationService>(
+    x => x.NotifyCandidate(id));
 
             return true;
         }
